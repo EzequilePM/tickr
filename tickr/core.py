@@ -1,0 +1,102 @@
+from datetime import datetime
+from tickr.config import config
+from tickr.utils import make_hash, save_in_md, save_in_json
+
+# from tickr.utils import get_annex_data, get_title
+
+class Annex:
+  """
+    Annex is a `.md` document with more informatión of event
+  """
+
+  def __init__(self, doc_hash: str, text="") -> None:
+    
+    self.doc = text
+    self.hash = doc_hash
+
+  def save_in(self, dir_path: str) -> str:
+    """
+      save the instance in `md` file and return the file's path
+    """
+    file_path = f"{dir_path}/{self.hash}.md"
+    save_in_md(file_path, self.doc)
+
+    return file_path
+
+class Event:
+  """
+  Represents a single calendar event.
+
+  An Event consists of the following components:
+
+  - tag (str): 
+    Used to categorize or group events.
+
+  - title and description (str): 
+    The title contains the main information about the event.
+    If a description is provided, it is stored in a separate annex file.
+
+  - date (datetime): 
+    Stores the date and time of the event.
+  ---  
+  # Annex
+  The annex file is used to store additional information related to the event.
+  It is composed of two parts:
+    - A header (internal metadata)
+    - A body (the detailed description of the event)
+  ---
+  """
+  def __init__(self):
+
+    """
+      Create default instance of Event
+    """
+
+    self.tag = ""
+    self.title = ""
+    self.date = None  # date event
+    self.to_annex = "" # Annex file
+
+
+  def set_event(self, tag: str,
+                title: str,
+                date: datetime,
+                description: str = None
+                ):
+
+    """
+      Set Event fills
+    """
+
+    self.tag = tag
+    self.title = title
+    self.date = date
+    self.to_annex = description
+
+    self.date_day = self.date.strftime(config['event']['format_date'])
+
+  def __str__(self):
+    return f"""
+    [{self.__class__}]
+    {self.tag}
+    {self.title} - {self.date_day}
+    {self.to_annex}"""
+
+  def save_event(self):
+    """
+    Save data of this event
+    """
+    directory = config['event']['path']
+    
+    event_hash = make_hash(str(self), config['user']['hash_length'])
+
+    event_path = f"{directory}/tickr-{self.title}_{self.date_day}_{event_hash}.json"
+    
+    data = {"title": self.title,
+            "tag": self.tag,
+            "hash": event_hash,
+            "date": self.date.strftime(config['event']['format_date']),
+            "annex": Annex(event_hash, f"# {self.title}\n{self.to_annex}").save_in(config['event']['path'])
+            }
+    
+    save_in_json(event_path, data)
