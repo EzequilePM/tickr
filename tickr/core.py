@@ -1,6 +1,6 @@
 from datetime import datetime
 from tickr.config import config
-from tickr.utils import make_hash, save_in_md, save_in_json
+from tickr.utils import *
 
 # from tickr.utils import get_annex_data, get_title
 
@@ -100,3 +100,20 @@ class Event:
             }
     
     save_in_json(event_path, data)
+
+  def load_event(self, file_name: str) -> None:
+    """
+    Given the event's file_name, which corresponds to the name of the JSON file,
+    `load_event` loads the event information into this instance.
+
+    Args:
+      file_name(str): The name of JSON file ontaining the event data.
+    """
+    json_event = get_json_data(file_name)
+
+    self.tag = json_event['tag']
+    self.title = json_event['title']
+    self.date_day = json_event['date']
+    self.date = datetime.strptime(json_event['date'],
+                                  config['event']['format_date'])
+    self.to_annex = json_event['annex']
