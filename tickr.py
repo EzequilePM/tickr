@@ -1,45 +1,90 @@
+"""
+Tickr - CLI-based personal agenda.
+
+This script allows the user to manage scheduled events and tags
+using command-line arguments.
+
+Available commands:
+  add     Add a new event or tag
+  (upcoming: list, edit, delete)
+
+Usage example:
+  python tickr.py add -f event -g work -t "Meeting" -d 2025-08-03
+"""
 from tickr import core
 from tickr.config import config
-import datetime, argparse
+
+from datetime import datetime
+import argparse
+
+congif_date_format = config['event']['format_date']
+
+def make_event(arg_dict: dict) -> object:
+  """
+  Create an instance of the Event calss.
+  
+  Args:
+    arg_dict (dict): Dictionary with keys 'tag', 'title' and 'date'.
+
+  Returns:
+    Event: Configured instance of Event class.
+  """
+
+  event = core.Event()
+  event.set_event(tag=arg_dict["tag"],
+                  title=arg_dict["title"],
+                  date=datetime.strptime(arg_dict["date"], congif_date_format),
+                  description=arg_dict["message"]
+                  )
+  return event
 
 def main():
-  parser = argparse.ArgumentParser(description="Tickr - Agenda de consola")
-  # add
-  parser.add_argument('--add', action='store_true', help="Agrega un nuevo evento")
+  # Ticker inputs
+  parser = argparse.ArgumentParser(description="Tickr - agenda CLI")
+  input_command = parser.add_subparsers(dest="command", required=True)
   
-  parser.add_argument('-t', '--tag', default="EVENT",
-                      type=str, help="etiqueta del evento")
+  ## Command add
+  #- tiker.py add
+  command_add = input_command.add_parser("add", help="add event/tag to Tickr")
+
+  command_add.add_argument('-f', '--flag', default='event',
+                           type=str, help="event, tag")
   
-  parser.add_argument('-T', '--title',
-                      type=str, help="titulo del evento")
+  command_add.add_argument('-g', '--tag', default='defoult',
+                      type=str, help="event tag")
+  
+  command_add.add_argument('-t', '--title',
+                      type=str, help="event title")
 
-  parser.add_argument('-l', '--long_description',
-                      help="descripción del evento")
+  command_add.add_argument('-m', '--message', type=str, default="",
+                      help="event description")
 
-  parser.add_argument('-d', '--date',
-                      type=str, help="Dia del evento")
+  command_add.add_argument('-d', '--date',
+                      type=str, help="Date to schedule the event")
 
+  # TODO Implement command to list events.
+
+  # TODO Implement command to edit events.
+
+  # TODO Implement command to delete events.
   args = parser.parse_args()
 
-  if args.add:
+  if args.command == "add":
 
-    event = core.Event()
-    event.set_event(args.tag, args.title,
-                    datetime.datetime.strptime(args.date,
-                                               config['event']['format_date']))
-  
-  if args.long_description:
+    if args.message == "":
+      pass
 
-    description = input("descripción:\n")
+    if args.flag == 'event':
+      event = make_event(vars(args))
 
-    event.set_event(args.tag, args.title,
-                    datetime.datetime.strptime(args.date,
-                                               config['event']['format_date']),
-                                               description)
-
-
-    event.save_event()
-    print(str(event))
-
+    elif args.flag == 'tag':
+      # TODO: Implement tag's utilitis
+      pass
+    else:
+      print("flag input error")
     
+  event.save_event()
+  print(str(event))
+  print("\033[1;32m\nEvent made correctly\033[0m")
+
 main()
