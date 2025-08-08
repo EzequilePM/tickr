@@ -13,15 +13,88 @@ Usage example:
 """
 from tickr import core
 from tickr.config import config
-
+from tickr.utils import search_files
 from datetime import datetime
+from typing import Any
 import argparse
+from os import remove
 
-congif_date_format = config['event']['format_date']
+hash_length: int = config['user']['hash_length']
+config_date_format = config['event']['format_date']
+dir_path = config['event']['path']
 
-def make_event(arg_dict: dict) -> object:
+def get_dict_event(event_path: str) -> dict[str, Any]:
   """
-  Create an instance of the Event calss.
+  Load and return the event data from file paths.
+  
+  Args:
+    event_path (str): path of json event.
+  
+  Returns:
+    dict(str, Any): dict with the info of event.
+  """
+  event = core.Event()
+  event.load_event(event_path)
+  return event.__dict__
+
+def get_dicts_of_events(event_paths: list[str]) -> list[dict[str, Any]]:
+  """
+  Load and return the event data from a list of file paths.
+
+  
+  Args:
+    event_paths (list(str)): List of events paths.
+  Returns:
+    list[dict(str, Any)]: A list of dictionaries containing event data.
+  """
+
+  return list(map(get_dict_event, event_paths))
+
+def set_format_preferences(data_of_event: dict[str, str]) -> dict[str, str]:
+  """
+  Applies a format to the values(str) with the specific keys in the provided dictionary.
+  """
+  # TODO: Add customization configs
+  if len(data_of_event['title'])>25:
+    title = data_of_event['title']
+    data_of_event['title'] = title[:22] + "..." 
+  
+  return data_of_event
+
+def list_of_events(event_paths: list[str]) -> None:
+  """
+  Print a summary of all saved events to the console.
+  Args:
+      event_paths (list(str)): List of events  paths
+    Returns:
+      str: Printed output with a list display of events
+  """
+
+  event_dicts = get_dicts_of_events(event_paths)
+  for data_of_event in  map(set_format_preferences, event_dicts):
+
+    print(f"{data_of_event['title']:<25}{data_of_event['tag']:<20}{data_of_event['date']}   |{data_of_event['to_annex']}")
+
+
+def list_full_events(event_paths: list[str]) -> None:
+    """
+    Print a detailed list of all events (excluding annex content).
+
+    Args:
+      event_paths (list[str]): List of paths to event files.
+
+    Returns:
+      str: Printed output with a separator line and event data.
+    """
+    event = core.Event()
+    
+    for event_path in event_paths:
+      event.load_event(event_path)
+      print(f"{'-' * 50}\n{str(event)}")
+
+def make_event(arg_dict: dict) -> core.Event:
+  """
+  Create an instance of the Event class.
   
   Args:
     arg_dict (dict): Dictionary with keys 'tag', 'title' and 'date'.
@@ -33,7 +106,7 @@ def make_event(arg_dict: dict) -> object:
   event = core.Event()
   event.set_event(tag=arg_dict["tag"],
                   title=arg_dict["title"],
-                  date=datetime.strptime(arg_dict["date"], congif_date_format),
+                  date=datetime.strptime(arg_dict["date"], config_date_format),
                   description=arg_dict["message"]
                   )
   return event
@@ -50,7 +123,7 @@ def main():
   command_add.add_argument('-f', '--flag', default='event',
                            type=str, help="event, tag")
   
-  command_add.add_argument('-g', '--tag', default='defoult',
+  command_add.add_argument('-g', '--tag', default='default',
                       type=str, help="event tag")
   
   command_add.add_argument('-t', '--title',
@@ -62,29 +135,123 @@ def main():
   command_add.add_argument('-d', '--date',
                       type=str, help="Date to schedule the event")
 
-  # TODO Implement command to list events.
 
-  # TODO Implement command to edit events.
 
-  # TODO Implement command to delete events.
+  command_ls = input_command.add_parser("ls", help="List all events")
+
+  command_ls.add_argument('-f', '--flag', default='event',
+                           type=str, help="event, tag")
+  
+  command_ls.add_argument('-l', '--list', action="store_true",
+                           help="format of list as ls command")
+  
+  # TODO: Implement -m --mach , to serch in events or tags
+  command_ls.add_argument('-m', '--mach',
+                           type=str, help="event, tag")
+
+  command_edit = input_command.add_parser("edit", help="Allows you to modify an event or tag")
+
+  command_edit.add_argument('-f', '--flag', default='event',
+                           type=str, help="event, tag")
+  
+
+  # TODO: Add a better system to referens events.  
+  command_edit.add_argument('-o', '--old_event', default="",
+                           type=str, help="Full path of the old event")
+
+  command_edit.add_argument('-t', '--title', default="",
+                           type=str, help="Remplase old title with new title")
+
+  command_edit.add_argument('-a', '--annex_path', default="",
+                           type=str, help="Remplase old annex with new annex file")
+  
+  command_edit.add_argument('-g', '--tag', default="",
+                           type=str, help="Remplase old tag with new tag")
+
+  command_edit.add_argument('-d', '--date', default="",
+                           type=str, help="Remplase old date with new date")
+  
+  command_delete = input_command.add_parser("delete", help="Delete an event")
+
+  command_delete.add_argument('-f', '--flag', default='event',
+                           type=str, help="event, tag")
+
+  command_delete.add_argument('-p', '--path_event', required=True,
+                              type=str, help="Full path of event to delete")
+  
   args = parser.parse_args()
+  type_element = args.flag
 
-  if args.command == "add":
+  if type_element == 'event':
+    if args.command == "add":
 
-    if args.message == "":
-      pass
+      if args.message == "":
+        # TODO: Implement the input long description, multiline.
+        pass
+      if args.title is None:
+        print("\033[1;31m[ERROR] Event title is required\033[0m")
+        return
+      
+      try:
+        event = make_event(vars(args))
+        event.save_event()
+        print(str(event))
+        
+      except TypeError:
+        print("\033[1;31m[ERROR] Date of event not entered\033[0m")
 
-    if args.flag == 'event':
-      event = make_event(vars(args))
+      except ValueError:
+        print(f"\033[1;31m[ERROR] The format of the date '{args.date}' of format is not valid")
+        print(f"Expected format: {config_date_format}\033[0m")
 
-    elif args.flag == 'tag':
-      # TODO: Implement tag's utilitis
-      pass
-    else:
-      print("flag input error")
+    elif args.command == 'ls':
+      event_json_name = search_files(dir_path, ".json")
+      event_paths = list(map(lambda json: f"{dir_path}/{json}", event_json_name))
+
+      if args.list:
+        list_of_events(event_paths)
+      else:
+        list_full_events(event_paths)
+
+    elif args.command == 'edit':
+      
+      path_to_edit_event = args.old_event
+      
+      # TODO: edit events.
+      # Modify Event class to save hash.
+      # TODO: Add: checks and error messages.
+
+
+      to_edit_event = core.Event()
+      to_edit_event.load_event(path_to_edit_event)
+      print(to_edit_event)
+     
+      # Set vlaues
+      to_edit_event.title = args.title if args.title != "" else to_edit_event.title
+      to_edit_event.annex = args.annex_path if args.annex_path != "" else to_edit_event.to_annex
+      to_edit_event.tag = args.tag if args.tag != "" else to_edit_event.tag
+
+      if args.date != "":
+        to_edit_event.date = datetime.strptime(args.date, config_date_format)
+      
+      to_edit_event.save_event()
+      remove(path_to_edit_event)
     
-  event.save_event()
-  print(str(event))
-  print("\033[1;32m\nEvent made correctly\033[0m")
+    elif args.command == 'delete':
+      # TODO: Add: checks and error messages.
+      # TODO: Manage annex files
+      event_to_delete = args.path_event
+      remove(event_to_delete)
+      print(f'Deleted: \n{event_to_delete}')
+    else:
+      print(f"\033[1;31m[ERROR] Unknown command {args.command}.\033[0m")
 
-main()
+  elif args.flag == 'tag':
+    # TODO: Implement tag's utilitis
+    pass
+
+  else:
+    print("\033[1;31m[ERROR] Unknown flag. Use 'event' or 'tag'.\033[0m")
+
+if __name__ == '__main__':
+  main()

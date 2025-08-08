@@ -5,17 +5,17 @@ import hashlib
 
 def get_json_data(path: str) -> dict:
   """
-		get all data form a json fill
+		get all data from a json file
   """
   with open(path, "r", encoding="UTF-8") as file:
     return load(file)
 
 def get_markdown_data(path: str) -> str:
   """
-		get text form a Markdown fill
+		get text from a Markdown file
   """
   with open(path, "r", encoding="UTF-8") as file:
-    return load(file)
+    return file.read()
 
 def save_in_json(path: str, data: dict) -> None:
   """
@@ -26,7 +26,7 @@ def save_in_json(path: str, data: dict) -> None:
 
 def save_in_md(path: str, text: str) -> None:
   """
-		save the text in md fill in path
+		save the text in md file in path
   """
   with open(path, "x", encoding="UTF-8") as file:
     file.write(text)
@@ -52,12 +52,12 @@ def list_files(path):
   except Exception as e:
       return f"An error occurred: {e}"
 
-def search_files(directory, subSting) -> list[str]:
+def search_files(directory, substring) -> list[str]:
   """
   Finds files whose names partially or fully match the provided substring,
   only within the directory.
 
-  - Does not perform deep searches.
+  - Does not perfrom deep searches.
   - Is case-sensitive.
 
   Args:
@@ -68,8 +68,16 @@ def search_files(directory, subSting) -> list[str]:
     list(str): Basenames of files containing `substring` in `directory`.
   """
 
-  return list(filter(lambda element: bool(re.findall(subSting, element)),
+  return list(filter(lambda element: search_in_string(element, substring),
                       list_files(directory))
                       )
-  
-  
+
+def search_in_string(text, substring) -> bool:
+  """
+  Search at least one existence of subString in a text
+
+  Args:
+    text (str): search space
+    subString (str) 
+  """
+  return bool(re.search(substring, text))

@@ -6,7 +6,7 @@ from tickr.utils import *
 
 class Annex:
   """
-    Annex is a `.md` document with more informatión of event
+    Annex is a `.md` document with more information of event
   """
 
   def __init__(self, doc_hash: str, text="") -> None:
