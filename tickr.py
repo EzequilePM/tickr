@@ -26,10 +26,10 @@ dir_path = config['event']['path']
 def get_dict_event(event_path: str) -> dict[str, Any]:
   """
   Load and return the event data from file paths.
-  
+
   Args:
     event_path (str): path of json event.
-  
+
   Returns:
     dict(str, Any): dict with the info of event.
   """
@@ -41,7 +41,7 @@ def get_dicts_of_events(event_paths: list[str]) -> list[dict[str, Any]]:
   """
   Load and return the event data from a list of file paths.
 
-  
+
   Args:
     event_paths (list(str)): List of events paths.
   Returns:
@@ -57,8 +57,8 @@ def set_format_preferences(data_of_event: dict[str, str]) -> dict[str, str]:
   # TODO: Add customization configs
   if len(data_of_event['title'])>25:
     title = data_of_event['title']
-    data_of_event['title'] = title[:22] + "..." 
-  
+    data_of_event['title'] = title[:22] + "..."
+
   return data_of_event
 
 def list_of_events(event_paths: list[str]) -> None:
@@ -87,7 +87,7 @@ def list_full_events(event_paths: list[str]) -> None:
       str: Printed output with a separator line and event data.
     """
     event = core.Event()
-    
+
     for event_path in event_paths:
       event.load_event(event_path)
       print(f"{'-' * 50}\n{str(event)}")
@@ -95,7 +95,7 @@ def list_full_events(event_paths: list[str]) -> None:
 def make_event(arg_dict: dict) -> core.Event:
   """
   Create an instance of the Event class.
-  
+
   Args:
     arg_dict (dict): Dictionary with keys 'tag', 'title' and 'date'.
 
@@ -115,17 +115,17 @@ def main():
   # Ticker inputs
   parser = argparse.ArgumentParser(description="Tickr - agenda CLI")
   input_command = parser.add_subparsers(dest="command", required=True)
-  
+
   ## Command add
   #- tiker.py add
   command_add = input_command.add_parser("add", help="add event/tag to Tickr")
 
   command_add.add_argument('-f', '--flag', default='event',
                            type=str, help="event, tag")
-  
+
   command_add.add_argument('-g', '--tag', default='default',
                       type=str, help="event tag")
-  
+
   command_add.add_argument('-t', '--title',
                       type=str, help="event title")
 
@@ -141,10 +141,10 @@ def main():
 
   command_ls.add_argument('-f', '--flag', default='event',
                            type=str, help="event, tag")
-  
+
   command_ls.add_argument('-l', '--list', action="store_true",
                            help="format of list as ls command")
-  
+
   # TODO: Implement -m --mach , to serch in events or tags
   command_ls.add_argument('-m', '--mach',
                            type=str, help="event, tag")
@@ -153,9 +153,9 @@ def main():
 
   command_edit.add_argument('-f', '--flag', default='event',
                            type=str, help="event, tag")
-  
 
-  # TODO: Add a better system to referens events.  
+
+  # TODO: Add a better system to referens events.
   command_edit.add_argument('-o', '--old_event', default="",
                            type=str, help="Full path of the old event")
 
@@ -164,13 +164,13 @@ def main():
 
   command_edit.add_argument('-a', '--annex_path', default="",
                            type=str, help="Remplase old annex with new annex file")
-  
+
   command_edit.add_argument('-g', '--tag', default="",
                            type=str, help="Remplase old tag with new tag")
 
   command_edit.add_argument('-d', '--date', default="",
                            type=str, help="Remplase old date with new date")
-  
+
   command_delete = input_command.add_parser("delete", help="Delete an event")
 
   command_delete.add_argument('-f', '--flag', default='event',
@@ -178,7 +178,7 @@ def main():
 
   command_delete.add_argument('-p', '--path_event', required=True,
                               type=str, help="Full path of event to delete")
-  
+
   args = parser.parse_args()
   type_element = args.flag
 
@@ -191,12 +191,12 @@ def main():
       if args.title is None:
         print("\033[1;31m[ERROR] Event title is required\033[0m")
         return
-      
+
       try:
         event = make_event(vars(args))
         event.save_event()
         print(str(event))
-        
+
       except TypeError:
         print("\033[1;31m[ERROR] Date of event not entered\033[0m")
 
@@ -214,9 +214,9 @@ def main():
         list_full_events(event_paths)
 
     elif args.command == 'edit':
-      
+
       path_to_edit_event = args.old_event
-      
+
       # TODO: edit events.
       # Modify Event class to save hash.
       # TODO: Add: checks and error messages.
@@ -225,7 +225,7 @@ def main():
       to_edit_event = core.Event()
       to_edit_event.load_event(path_to_edit_event)
       print(to_edit_event)
-     
+
       # Set vlaues
       to_edit_event.title = args.title if args.title != "" else to_edit_event.title
       to_edit_event.annex = args.annex_path if args.annex_path != "" else to_edit_event.to_annex
@@ -233,10 +233,10 @@ def main():
 
       if args.date != "":
         to_edit_event.date = datetime.strptime(args.date, config_date_format)
-      
+
       to_edit_event.save_event()
       remove(path_to_edit_event)
-    
+
     elif args.command == 'delete':
       # TODO: Add: checks and error messages.
       # TODO: Manage annex files

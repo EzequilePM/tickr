@@ -10,7 +10,7 @@ class Annex:
   """
 
   def __init__(self, doc_hash: str, text="") -> None:
-    
+
     self.doc = text
     self.hash = doc_hash
 
@@ -29,16 +29,16 @@ class Event:
 
   An Event consists of the following components:
 
-  - tag (str): 
+  - tag (str):
     Used to categorize or group events.
 
-  - title and description (str): 
+  - title and description (str):
     The title contains the main information about the event.
     If a description is provided, it is stored in a separate annex file.
 
-  - date (datetime): 
+  - date (datetime):
     Stores the date and time of the event.
-  ---  
+  ---
   # Annex
   The annex file is used to store additional information related to the event.
   It is composed of two parts:
@@ -87,18 +87,18 @@ class Event:
     Save data of this event
     """
     directory = config['event']['path']
-    
+
     event_hash = make_hash(str(self), config['user']['hash_length'])
 
     event_path = f"{directory}/tickr-{self.title}_{self.date_day}_{event_hash}.json"
-    
+
     data = {"title": self.title,
             "tag": self.tag,
             "hash": event_hash,
             "date": self.date.strftime(config['event']['format_date']),
             "annex": Annex(event_hash, f"# {self.title}\n{self.to_annex}").save_in(config['event']['path'])
             }
-    
+
     save_in_json(event_path, data)
 
   def load_event(self, file_name: str) -> None:
