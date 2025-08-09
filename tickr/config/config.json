@@ -1,0 +1,14 @@
+{
+  "user":
+  {
+    "name": "",
+    "time_zone": "",
+    "language": "",
+    "hash_length": 6
+  },
+  "event":
+  {
+    "path": "", 
+    "format_date": "%d-%m-%Y"
+  }
+}
