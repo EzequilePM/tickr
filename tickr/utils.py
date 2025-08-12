@@ -30,7 +30,7 @@ def save_in_md(path: str, text: str) -> None:
   """
   with open(path, "x", encoding="UTF-8") as file:
     file.write(text)
-  
+
 def make_hash(text: str, n= 6) -> str:
   return hashlib.sha1(text.encode()).hexdigest()[:n]
 
@@ -78,6 +78,6 @@ def search_in_string(text, substring) -> bool:
 
   Args:
     text (str): search space
-    subString (str) 
+    subString (str)
   """
   return bool(re.search(substring, text))
