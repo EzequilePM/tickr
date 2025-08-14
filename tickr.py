@@ -182,10 +182,10 @@ def main():
   command_delete.add_argument('-s', '--skip-verify',
                               action="store_true", help="Skips deletion confirmations")
   
-  command_delete.add_argument('-a', '--remobe-annex',
+  command_delete.add_argument('-a', '--remove-annex',
                                action="store_true", help="delete annex file and kept the event")
   
-  command_delete.add_argument('-e', '--remobe-event',
+  command_delete.add_argument('-e', '--remove-event',
                                action="store_true", help="delete event file and kept the annex")
 
   args = parser.parse_args()
