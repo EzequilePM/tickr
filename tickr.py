@@ -17,7 +17,7 @@ from tickr.utils import search_files
 from datetime import datetime
 from typing import Any
 import argparse
-from os import remove
+from os import remove, path
 
 hash_length: int = config['user']['hash_length']
 config_date_format = config['event']['format_date']
@@ -176,8 +176,17 @@ def main():
   command_delete.add_argument('-f', '--flag', default='event',
                            type=str, help="event, tag")
 
-  command_delete.add_argument('-p', '--path_event', required=True,
-                              type=str, help="Full path of event to delete")
+  command_delete.add_argument('-n', '--name', required=True,
+                              type=str, help="Name of event file")
+  
+  command_delete.add_argument('-s', '--skip-verify',
+                              action="store_true", help="Skips deletion confirmations")
+  
+  command_delete.add_argument('-a', '--remobe-annex',
+                               action="store_true", help="delete annex file and kept the event")
+  
+  command_delete.add_argument('-e', '--remobe-event',
+                               action="store_true", help="delete event file and kept the annex")
 
   args = parser.parse_args()
   type_element = args.flag
@@ -238,11 +247,61 @@ def main():
       remove(path_to_edit_event)
 
     elif args.command == 'delete':
-      # TODO: Add: checks and error messages.
-      # TODO: Manage annex files
-      event_to_delete = args.path_event
-      remove(event_to_delete)
-      print(f'Deleted: \n{event_to_delete}')
+
+      event_to_delete = args.name
+      event = core.Event()
+      delete_path = path.join(dir_path, event_to_delete) 
+      try:
+        event.load_event(delete_path)
+      except FileNotFoundError:
+        print(f"\033[1;33m Event file '{delete_path}' not found.\033[1;0m")
+        exit(1)
+
+      annex_path = event.to_annex
+
+      print("\033[1;33m[INFO]","The event does not have an annex file\033[1;0m" if annex_path is None else f"The event has an annex file: {annex_path}\033[1;0m")
+      # manual verification:
+      if not args.skip_verify:
+        if args.remobe_event:
+          manual_delet_event = input(f"Are you sure to delete:  {event_to_delete}\n").strip().upper()
+        
+        if args.remobe_annex:
+          manual_delet_annex = input("Delete annex file?\n").strip().upper()
+
+      if (args.skip_verify or manual_delet_event) and args.remobe_event :
+
+        try:
+          remove(delete_path)
+        except FileNotFoundError:
+          print(f"\033[1;31m[ERROR] Event file not found\033[1;0m")
+          exit(1)
+
+        except PermissionError:
+          print(f"\033[1;31m[ERROR] Permission denied when trying to access file {delete_path}\033[1;0m")
+          exit(1)
+
+        print(f"\033[1;33m[INFO] Deleted evnet file: {event_to_delete}\033[1;0m")
+
+      if (args.skip_verify or manual_delet_annex) and args.remobe_annex:
+        try:
+          if path.exists(annex_path):
+            remove(annex_path)
+
+          else:
+            print(f"Annex files '{annex_path}' do not exist, nothing to delete.\033[1;0m")
+
+        except FileNotFoundError:
+          print(f"\033[1;31m[ERROR] Event file not found\033[1;0m")
+          exit(1)
+
+        except PermissionError:
+          print(f"\033[1;31m[ERROR] You do not have permission to interact with the file {annex_path}\033[1;0m")
+          exit(1)
+
+        #Event does not have an annex file
+        event.to_annex = None
+        print(f"\033[1;33m[INFO] Deleted annex file: {annex_path}\033[1;0m")
+
     else:
       print(f"\033[1;31m[ERROR] Unknown command {args.command}.\033[0m")
 
