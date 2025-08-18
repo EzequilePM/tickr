@@ -13,15 +13,23 @@ Usage example:
 """
 from tickr import core
 from tickr.config import config
-from tickr.utils import search_files
+from tickr.utils import search_files, call_text_editor
 from datetime import datetime
 from typing import Any
 import argparse
-from os import remove, path
+from sys import stdin
+from os import remove, path, environ
 
 hash_length: int = config['user']['hash_length']
+text_editor: str = config['user']['text_editor']
 config_date_format = config['event']['format_date']
 dir_path = config['event']['path']
+
+def header_annex(to_event:dict) -> str:
+  ancho = max(len(to_event['title']), len(to_event['tag']))
+  return f"""- {to_event['tag']}
+- {to_event['date']}
+{'-' * ancho}"""
 
 def get_dict_event(event_path: str) -> dict[str, Any]:
   """
@@ -112,6 +120,7 @@ def make_event(arg_dict: dict) -> core.Event:
   return event
 
 def main():
+  global text_editor
   # Ticker inputs
   parser = argparse.ArgumentParser(description="Tickr - agenda CLI")
   input_command = parser.add_subparsers(dest="command", required=True)
@@ -194,9 +203,14 @@ def main():
   if type_element == 'event':
     if args.command == "add":
 
-      if args.message == "":
-        # TODO: Implement the input long description, multiline.
-        pass
+      if stdin.isatty():
+        # tty input
+        editor_from_env = environ.get(text_editor)
+        if editor_from_env:
+          text_editor = editor_from_env
+
+        args.message = call_text_editor(text_editor, header_annex(vars(args))) if not args.message else args.message
+        
       if args.title is None:
         print("\033[1;31m[ERROR] Event title is required\033[0m")
         return
@@ -262,13 +276,13 @@ def main():
       print("\033[1;33m[INFO]","The event does not have an annex file\033[1;0m" if annex_path is None else f"The event has an annex file: {annex_path}\033[1;0m")
       # manual verification:
       if not args.skip_verify:
-        if args.remobe_event:
+        if args.remove_event:
           manual_delet_event = input(f"Are you sure to delete:  {event_to_delete}\n").strip().upper()
         
-        if args.remobe_annex:
+        if args.remove_annex:
           manual_delet_annex = input("Delete annex file?\n").strip().upper()
 
-      if (args.skip_verify or manual_delet_event) and args.remobe_event :
+      if (args.skip_verify or manual_delet_event) and args.remove_event :
 
         try:
           remove(delete_path)
@@ -282,7 +296,7 @@ def main():
 
         print(f"\033[1;33m[INFO] Deleted evnet file: {event_to_delete}\033[1;0m")
 
-      if (args.skip_verify or manual_delet_annex) and args.remobe_annex:
+      if (args.skip_verify or manual_delet_annex) and args.remove_annex:
         try:
           if path.exists(annex_path):
             remove(annex_path)
