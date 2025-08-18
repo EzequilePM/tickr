@@ -1,5 +1,6 @@
 from json import load, dump
-from os import listdir
+from os import listdir, remove, close, path
+import sys, subprocess, tempfile
 import re
 import hashlib
 
@@ -81,3 +82,45 @@ def search_in_string(text, substring) -> bool:
     subString (str)
   """
   return bool(re.search(substring, text))
+
+def call_text_editor(editor_name: str, header: str) -> str:
+
+  """
+  Open a text editor and wait until the user saves the file.
+
+  Args:
+    editor_name (str): Name of the text editor to open.
+    header (str): Initial text of document
+
+  Returns:
+    document_text (str): Content of the saved file.
+  """
+  text = ""
+  try:
+    fd, tmp_path = tempfile.mkstemp(suffix=".md")
+    close(fd)
+
+    with open(tmp_path, "w", encoding="utf-8") as f:
+      f.write(header)
+
+    subprocess.run([editor_name, tmp_path])
+    with open(tmp_path, "r", encoding="utf-8") as f:
+      text = f.read()
+    
+  except FileNotFoundError as e:
+    print(f"No file or command found: {e}")
+
+  except PermissionError as e:
+    print(f"Permissions problem: {e}")
+
+  except subprocess.CalledProcessError as e:
+    print(f"The editor returned an error: {e}")
+
+  except Exception as e:
+    print(f"Unexpected error: {e}")
+
+  finally:
+    if path.exists(tmp_path):
+        remove(tmp_path)
+
+  return text
