@@ -282,7 +282,7 @@ def main():
         if args.remove_annex:
           manual_delet_annex = input("Delete annex file?\n").strip().upper()
 
-      if (args.skip_verify or manual_delet_event) and args.remove_event :
+      if (args.skip_verify or manual_delet_event == 'S') and args.remove_event :
 
         try:
           remove(delete_path)
@@ -296,7 +296,7 @@ def main():
 
         print(f"\033[1;33m[INFO] Deleted evnet file: {event_to_delete}\033[1;0m")
 
-      if (args.skip_verify or manual_delet_annex) and args.remove_annex:
+      if (args.skip_verify or manual_delet_annex == 'S') and args.remove_annex:
         try:
           if path.exists(annex_path):
             remove(annex_path)
