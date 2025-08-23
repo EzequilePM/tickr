@@ -25,6 +25,21 @@ text_editor: str = config['user']['text_editor']
 config_date_format = config['event']['format_date']
 dir_path = config['event']['path']
 
+def match_in_files(dir_path: str, subString: str) -> list[str]:
+  """
+  filter events by word match
+
+  Args:
+    subString (str): Internal string in file name.
+    dir_path (str): Path of directory event.
+  
+  Returns:
+    list(str): List of event path that content `subString`
+  """
+  rule_event = "^tickr-.+{}.+\.json$"
+  events_json_names = search_files(dir_path, rule_event.format(subString))
+  return list(map(lambda json: f"{dir_path}/{json}", events_json_names))
+
 def header_annex(to_event:dict) -> str:
   ancho = max(len(to_event['title']), len(to_event['tag']))
   return f"""- {to_event['tag']}
@@ -154,17 +169,14 @@ def main():
   command_ls.add_argument('-l', '--list', action="store_true",
                            help="format of list as ls command")
 
-  # TODO: Implement -m --mach , to serch in events or tags
-  command_ls.add_argument('-m', '--mach',
-                           type=str, help="event, tag")
+  command_ls.add_argument('-m', '--match', default="",
+                           type=str, help="Applay search by match")
 
   command_edit = input_command.add_parser("edit", help="Allows you to modify an event or tag")
 
   command_edit.add_argument('-f', '--flag', default='event',
                            type=str, help="event, tag")
 
-
-  # TODO: Add a better system to referens events.
   command_edit.add_argument('-o', '--old_event', default="",
                            type=str, help="Full path of the old event")
 
@@ -179,6 +191,9 @@ def main():
 
   command_edit.add_argument('-d', '--date', default="",
                            type=str, help="Remplase old date with new date")
+  
+  command_edit.add_argument('-m', '--match', default="",
+                           type=str, help="Applay search by match")
 
   command_delete = input_command.add_parser("delete", help="Delete an event")
 
@@ -196,6 +211,9 @@ def main():
   
   command_delete.add_argument('-e', '--remove-event',
                                action="store_true", help="delete event file and kept the annex")
+  
+  command_delete.add_argument('-m', '--match', default="",
+                               type=str, help="Applay search by match")
 
   args = parser.parse_args()
   type_element = args.flag
@@ -228,9 +246,7 @@ def main():
         print(f"Expected format: {config_date_format}\033[0m")
 
     elif args.command == 'ls':
-      event_json_name = search_files(dir_path, ".json")
-      event_paths = list(map(lambda json: f"{dir_path}/{json}", event_json_name))
-
+      event_paths = match_in_files(dir_path, args.match)      
       if args.list:
         list_of_events(event_paths)
       else:
@@ -238,7 +254,20 @@ def main():
 
     elif args.command == 'edit':
 
-      path_to_edit_event = args.old_event
+      if args.old_event:
+        path_to_edit_event = args.old_event
+      elif args.match:
+        candidates = match_in_files(dir_path, args.match)
+        if len(candidates) == 1:
+          path_to_edit_event = candidates[0]
+        
+        elif len(candidates) == 0:
+          print("\033[1;33m[INFO]","No event matches\033[1;0m")
+          
+        else:
+          print("\033[1;33m[INFO]","Multiple events coincide\033[1;0m")
+          list_of_events(candidates)
+          exit(1)
 
       # TODO: edit events.
       # Modify Event class to save hash.
