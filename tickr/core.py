@@ -1,6 +1,7 @@
 from datetime import datetime
 from tickr.config import config
 from tickr.utils import *
+from pathlib import Path
 
 # from tickr.utils import get_annex_data, get_title
 
@@ -14,11 +15,11 @@ class Annex:
     self.doc = text
     self.hash = doc_hash
 
-  def save_in(self, dir_path: str) -> str:
+  def save_in(self, dir_path: Path) -> str:
     """
       save the instance in `md` file and return the file's path
     """
-    file_path = f"{dir_path}/{self.hash}.md"
+    file_path = dir_path / f"{self.hash}.md"
     save_in_md(file_path, self.doc)
 
     return file_path
@@ -96,18 +97,18 @@ class Event:
             "tag": self.tag,
             "hash": event_hash,
             "date": self.date.strftime(config['event']['format_date']),
-            "annex": Annex(event_hash, f"# {self.title}\n{self.to_annex}").save_in(config['event']['path'])
+            "annex": str(Annex(event_hash, f"# {self.title}\n{self.to_annex}").save_in(config['event']['path']))
             }
 
     save_in_json(event_path, data)
 
-  def load_event(self, file_name: str) -> None:
+  def load_event(self, file_name: Path) -> None:
     """
     Given the event's file_name, which corresponds to the name of the JSON file,
     `load_event` loads the event information into this instance.
 
     Args:
-      file_name(str): The name of JSON file ontaining the event data.
+      file_name(Path): The name of JSON file ontaining the event data.
     """
     json_event = get_json_data(file_name)
 
@@ -116,4 +117,4 @@ class Event:
     self.date_day = json_event['date']
     self.date = datetime.strptime(json_event['date'],
                                   config['event']['format_date'])
-    self.to_annex = json_event['annex']
+    self.to_annex = Path(json_event['annex'])
