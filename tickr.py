@@ -16,6 +16,7 @@ from tickr.config import config
 from tickr.utils import search_files, call_text_editor
 from datetime import datetime
 from typing import Any
+from pathlib import Path
 import argparse
 from sys import stdin
 from os import remove, path, environ
@@ -25,20 +26,20 @@ text_editor: str = config['user']['text_editor']
 config_date_format = config['event']['format_date']
 dir_path = config['event']['path']
 
-def match_in_files(dir_path: str, subString: str) -> list[str]:
+def match_in_files(dir_path: Path, subString: str) -> list[Path]:
   """
   filter events by word match
 
   Args:
     subString (str): Internal string in file name.
-    dir_path (str): Path of directory event.
+    dir_path (Path): Path of directory event.
   
   Returns:
-    list(str): List of event path that content `subString`
+    list(Path): List of event path that content `subString`
   """
   rule_event = "^tickr-.+{}.+\.json$"
   events_json_names = search_files(dir_path, rule_event.format(subString))
-  return list(map(lambda json: f"{dir_path}/{json}", events_json_names))
+  return list(map(lambda json: dir_path / json, events_json_names))
 
 def header_annex(to_event:dict) -> str:
   ancho = max(len(to_event['title']), len(to_event['tag']))
@@ -46,12 +47,12 @@ def header_annex(to_event:dict) -> str:
 - {to_event['date']}
 {'-' * ancho}"""
 
-def get_dict_event(event_path: str) -> dict[str, Any]:
+def get_dict_event(event_path: Path) -> dict[str, Any]:
   """
   Load and return the event data from file paths.
 
   Args:
-    event_path (str): path of json event.
+    event_path (Path): path of json event.
 
   Returns:
     dict(str, Any): dict with the info of event.
@@ -60,13 +61,13 @@ def get_dict_event(event_path: str) -> dict[str, Any]:
   event.load_event(event_path)
   return event.__dict__
 
-def get_dicts_of_events(event_paths: list[str]) -> list[dict[str, Any]]:
+def get_dicts_of_events(event_paths: list[Path]) -> list[dict[str, Any]]:
   """
   Load and return the event data from a list of file paths.
 
 
   Args:
-    event_paths (list(str)): List of events paths.
+    event_paths (list(Path)): List of events paths.
   Returns:
     list[dict(str, Any)]: A list of dictionaries containing event data.
   """
@@ -84,11 +85,11 @@ def set_format_preferences(data_of_event: dict[str, str]) -> dict[str, str]:
 
   return data_of_event
 
-def list_of_events(event_paths: list[str]) -> None:
+def list_of_events(event_paths: list[Path]) -> None:
   """
   Print a summary of all saved events to the console.
   Args:
-      event_paths (list(str)): List of events  paths
+      event_paths (list(Path)): List of events  paths
     Returns:
       str: Printed output with a list display of events
   """
@@ -99,12 +100,12 @@ def list_of_events(event_paths: list[str]) -> None:
     print(f"{data_of_event['title']:<25}{data_of_event['tag']:<20}{data_of_event['date']}   |{data_of_event['to_annex']}")
 
 
-def list_full_events(event_paths: list[str]) -> None:
+def list_full_events(event_paths: list[Path]) -> None:
     """
     Print a detailed list of all events (excluding annex content).
 
     Args:
-      event_paths (list[str]): List of paths to event files.
+      event_paths (list[Path]): List of paths to event files.
 
     Returns:
       str: Printed output with a separator line and event data.

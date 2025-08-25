@@ -1,31 +1,32 @@
 from json import load, dump
 from os import listdir, remove, close, path
+from pathlib import Path
 import sys, subprocess, tempfile
 import re
 import hashlib
 
-def get_json_data(path: str) -> dict:
+def get_json_data(path: Path) -> dict:
   """
 		get all data from a json file
   """
   with open(path, "r", encoding="UTF-8") as file:
     return load(file)
 
-def get_markdown_data(path: str) -> str:
+def get_markdown_data(path: Path) -> str:
   """
 		get text from a Markdown file
   """
   with open(path, "r", encoding="UTF-8") as file:
     return file.read()
 
-def save_in_json(path: str, data: dict) -> None:
+def save_in_json(path: Path, data: dict) -> None:
   """
 		save the data in path
   """
   with open(path, "w", encoding="UTF-8") as file:
     dump(data, file, indent=2)
 
-def save_in_md(path: str, text: str) -> None:
+def save_in_md(path: Path, text: str) -> None:
   """
 		save the text in md file in path
   """
@@ -35,12 +36,12 @@ def save_in_md(path: str, text: str) -> None:
 def make_hash(text: str, n= 6) -> str:
   return hashlib.sha1(text.encode()).hexdigest()[:n]
 
-def list_files(path):
+def list_files(path: Path):
   """
   Lists files and folders within a given path.
 
   Args:
-      path (str): The path of the folder to list.
+      path (Path): The path of the folder to list.
 
   Returns:
       list: A list of file and folder names in the path.
@@ -53,7 +54,7 @@ def list_files(path):
   except Exception as e:
       return f"An error occurred: {e}"
 
-def search_files(directory, substring) -> list[str]:
+def search_files(directory: Path, substring: str) -> list[str]:
   """
   Finds files whose names partially or fully match the provided substring,
   only within the directory.
@@ -62,11 +63,11 @@ def search_files(directory, substring) -> list[str]:
   - Is case-sensitive.
 
   Args:
-    directory (str): Directory to search within.
+    directory (Path): Directory to search within.
     substring (str): Part of the name to search for.
 
   Returns:
-    list(str): Basenames of files containing `substring` in `directory`.
+    list(Path): Basenames of files containing `substring` in `directory`.
   """
 
   return list(filter(lambda element: search_in_string(element, substring),
